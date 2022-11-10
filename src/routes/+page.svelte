@@ -70,9 +70,7 @@
 
 <style lang='scss'>
 	#choose {
-		> div {
-			cursor: pointer;
-			
+		> button {
 			&:hover, &:focus {
 				background-color: #0451c9 !important;
 			}
