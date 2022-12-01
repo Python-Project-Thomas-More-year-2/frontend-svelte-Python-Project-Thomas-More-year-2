@@ -14,6 +14,22 @@
 	let formErrorMessage = '';
 	let createSessionPromise: Promise<[Session, User]>;
 	
+	let joinSession: {
+		promise?: Promise<[Session, User]>,
+		errorMessage: string,
+		input: {
+			sessionCode: string,
+			username: string,
+		}
+	} = {
+		promise: null,
+		errorMessage: '',
+		input: {
+			sessionCode: '',
+			username: ''
+		}
+	};
+	
 	const changeStatus = (st: Status) => () => {
 		status = st;
 	};
@@ -32,6 +48,28 @@
 			await goto('/session');
 		} catch (e) {
 			formErrorMessage = apiGetErrorMessage(e);
+		}
+	};
+	const submitJoin = async () => {
+		joinSession.errorMessage = '';
+		
+		if (!joinSession.input.sessionCode.trim())
+			return joinSession.errorMessage = 'Please fill in the Session Code';
+		
+		if (!joinSession.input.username.trim())
+			return joinSession.errorMessage = 'Please fill in the Username';
+		
+		if (!/^[a-zA-Z]{3}-[a-zA-Z]{3}$/.test(joinSession.input.sessionCode))
+			return joinSession.errorMessage = 'Session Code is incorrect (AAA-BBB)';
+		
+		joinSession.promise = Session.join(joinSession.input.sessionCode, joinSession.input.username);
+		try {
+			const res: [Session, User] = await joinSession.promise;
+			SessionStore.set(res[0]);
+			UserStore.set(res[1]);
+			await goto('/session');
+		} catch (e) {
+			joinSession.errorMessage = apiGetErrorMessage(e);
 		}
 	};
 </script>
@@ -62,6 +100,17 @@
 					<input class='align-middle mt-2' maxlength='15' placeholder='Username' type='text' name='name' id='name'>
 					<button type='submit' class='btn btn-primary mt-2'>Create</button>
 					<Spinner class='align-middle text-primary mt-2' promise={createSessionPromise} />
+				</form>
+			{/if}
+			{#if status === Status.JOIN}
+				<form on:submit|preventDefault={submitJoin} class='align-baseline mt-5 text-center'>
+					{#if joinSession.errorMessage}<p class='alert alert-danger'>{joinSession.errorMessage}</p>{/if}
+					<input class='align-middle mt-2' maxlength='15' placeholder='Username' type='text' name='name'
+								 bind:value={joinSession.input.username}>
+					<input class='align-middle mt-2' maxlength='15' placeholder='Code' type='text' name='code'
+								 bind:value={joinSession.input.sessionCode}>
+					<button type='submit' class='btn btn-primary mt-2'>Join</button>
+					<Spinner class='align-middle text-primary mt-2' promise={joinSession.promise} />
 				</form>
 			{/if}
 		{/if}
