@@ -7,6 +7,7 @@ export class User {
 	name: string;
 	isHost: boolean;
 	isBank: boolean;
+	socketConnection?: string;
 
 	constructor(user: IUser) {
 		this.id = user.id;
@@ -15,6 +16,7 @@ export class User {
 		this.name = user.name;
 		this.isHost = user.isHost;
 		this.isBank = user.isBank;
+		this.socketConnection = user.socketConnection;
 	}
 
 	public static async fetch(): Promise<User> {
@@ -29,4 +31,5 @@ export interface IUser {
 	name: string,
 	isHost: boolean,
 	isBank: boolean,
+	socketConnection?: string,
 }

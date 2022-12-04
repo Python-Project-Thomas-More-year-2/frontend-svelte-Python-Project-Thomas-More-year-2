@@ -1,6 +1,6 @@
 <!--suppress HtmlWrongAttributeValue -->
 <script lang='ts'>
-	import { SessionStore, UserStore } from '../../stores';
+	import { SessionStore, SocketStore, UserStore } from '../../stores';
 	import { type ISessionUpdate, Session } from '$lib/types/Session';
 	import { onMount } from 'svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
@@ -8,6 +8,7 @@
 	import { User } from '$lib/types/User';
 	import { apiGetErrorMessage } from '../../axios';
 	import Alert from '$lib/components/Alert.svelte';
+	import { connectToSocket } from '$lib/socket/socket-client';
 	
 	let sessionGetPromise: Promise<Session>;
 	let userGetPromise: Promise<User>;
@@ -25,22 +26,27 @@
 	});
 	
 	onMount(async () => {
-		if (!$SessionStore) {
-			sessionGetPromise = Session.fetchSession();
+			if (!$SessionStore) {
+				sessionGetPromise = Session.fetchSession();
+				
+				sessionGetPromise
+					.then((s: Session) => $SessionStore = s)
+					.catch(() => goto('/'));
+			}
 			
-			sessionGetPromise
-				.then((s: Session) => $SessionStore = s)
-				.catch(() => goto('/'));
+			if (!$UserStore) {
+				userGetPromise = User.fetch();
+				
+				try {
+					$UserStore = await userGetPromise;
+					if (!$SocketStore)
+						$SocketStore = await connectToSocket($UserStore?.socketConnection);
+				} catch {
+					await goto('/');
+				}
+			}
 		}
-		
-		if (!$UserStore) {
-			userGetPromise = User.fetch();
-			
-			userGetPromise
-				.then((s: User) => $UserStore = s)
-				.catch(() => goto('/'));
-		}
-	});
+	);
 	
 	const changeSessionProperties = async () => {
 		if (!$SessionStore) return;
