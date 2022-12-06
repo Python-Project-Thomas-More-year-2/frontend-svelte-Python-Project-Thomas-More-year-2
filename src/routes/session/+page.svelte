@@ -132,18 +132,20 @@
 								 name='free-parking'
 								 type='checkbox'></td>
 		</tr>
-		<tr>
-			<td colspan='2'>
-				<div class='d-flex flex-row justify-content-center'>
-					<div class='w-50 d-flex justify-content-center'>
-						<button class='btn btn-primary w-75' disabled={!$UserStore?.isHost} type='submit'>Change</button>
-						<div class='w-25'>
-							<Spinner promise={sessionGetPromise} />
+		{#if $UserStore?.isHost}
+			<tr>
+				<td colspan='2'>
+					<div class='d-flex flex-row justify-content-center'>
+						<div class='w-50 d-flex justify-content-center'>
+							<button class='btn btn-primary w-75' type='submit'>Change</button>
+							<div class='w-25'>
+								<Spinner promise={sessionGetPromise} />
+							</div>
 						</div>
 					</div>
-				</div>
-			</td>
-		</tr>
+				</td>
+			</tr>
+		{/if}
 	</table>
 </form>
 
