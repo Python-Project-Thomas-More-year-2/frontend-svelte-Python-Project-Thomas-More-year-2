@@ -65,8 +65,32 @@
 			sessionPropertiesChanged = true;
 		}
 	};
+	
+	let codeIsCopied = false;
+	const copySessionCode = () => {
+		if (!$SessionStore?.code) return;
+		
+		navigator.clipboard.writeText($SessionStore.code);
+		codeIsCopied = true;
+		setTimeout(() => {
+			codeIsCopied = false;
+		}, 1500);
+	};
 </script>
 
+<div>
+	<div class='text-center bg-primary text-white p-2 display-2 font-monospace text-uppercase'
+			 on:click={copySessionCode}
+			 role='button' tabindex='0'>
+		{$SessionStore?.code}
+	</div>
+	<div class='p-1 pb-2 text-center fst-italic bg-light small'>
+		(click to copy)
+		{#if codeIsCopied}
+			copied!
+		{/if}
+	</div>
+</div>
 <form on:submit|preventDefault={changeSessionProperties}>
 	<table class='table table-bordered'>
 		<tr>
@@ -108,18 +132,20 @@
 								 name='free-parking'
 								 type='checkbox'></td>
 		</tr>
-		<tr>
-			<td colspan='2'>
-				<div class='d-flex flex-row justify-content-center'>
-					<div class='w-50 d-flex justify-content-center'>
-						<button class='btn btn-primary w-75' disabled={!$UserStore?.isHost} type='submit'>Change</button>
-						<div class='w-25'>
-							<Spinner promise={sessionGetPromise} />
+		{#if $UserStore?.isHost}
+			<tr>
+				<td colspan='2'>
+					<div class='d-flex flex-row justify-content-center'>
+						<div class='w-50 d-flex justify-content-center'>
+							<button class='btn btn-primary w-75' type='submit'>Change</button>
+							<div class='w-25'>
+								<Spinner promise={sessionGetPromise} />
+							</div>
 						</div>
 					</div>
-				</div>
-			</td>
-		</tr>
+				</td>
+			</tr>
+		{/if}
 	</table>
 </form>
 
