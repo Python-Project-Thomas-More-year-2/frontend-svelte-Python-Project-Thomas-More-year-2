@@ -5,7 +5,7 @@
 	import { onMount } from 'svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { goto } from '$app/navigation';
-	import { User } from '$lib/types/User';
+	import { type PlayerList, User } from '$lib/types/User';
 	import { apiGetErrorMessage } from '../../axios';
 	import Alert from '$lib/components/Alert.svelte';
 	import { connectToSocket } from '$lib/socket/socket-client';
@@ -20,6 +20,7 @@
 		freeParking: undefined
 	};
 	let sessionPropertiesChanged = false;
+	let playerList: PlayerList = [];
 	
 	SessionStore.subscribe(s => {
 		changePropertiesFormInput = { ...s };
@@ -45,6 +46,8 @@
 					await goto('/');
 				}
 			}
+			
+			playerList = await Session.getConnectedUsers();
 		}
 	);
 	
@@ -119,6 +122,45 @@
 		</tr>
 	</table>
 </form>
+
+<table class='table'>
+	<thead>
+		<tr>
+			<th class='text-center'>Host</th>
+			<th class='text-center'>Name</th>
+			{#if $UserStore?.isHost}
+				<th class='text-center'>Kick</th>
+			{/if}
+		</tr>
+	</thead>
+	<tbody>
+		{#each playerList as player}
+			<tr class='{player.id === $UserStore?.id ? "table-active" : ""}'>
+				<td class='text-center'>
+					{#if player.isHost}
+						<svg width='2rem' fill='none' stroke='currentColor' viewBox='0 0 24 24'
+								 xmlns='http://www.w3.org/2000/svg'>
+							<path stroke-linecap='round' stroke-linejoin='round' stroke-width='2'
+										d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'></path>
+						</svg>
+					{/if}
+				</td>
+				<td>{player.name}</td>
+				{#if $UserStore?.isHost}
+					<td>
+						{#if player.id !== $UserStore?.id}
+							<button class='btn btn-outline-danger btn-sm' on:click={async ()=>{
+								playerList = await player.kick();
+							}}>X
+							</button>
+						{/if}
+					</td>
+				{/if}
+			</tr>
+		{/each}
+	</tbody>
+</table>
+
 <Alert bind:show={sessionPropertiesChanged} time={4000}>
 	{alertMessage}
 </Alert>
