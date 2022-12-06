@@ -1,4 +1,5 @@
 import { api } from '../../axios';
+import type { AxiosResponse } from 'axios';
 
 export class User {
 	id: number;
@@ -22,6 +23,10 @@ export class User {
 	public static async fetch(): Promise<User> {
 		return new User((await api.get<{ user: IUser }>('/user')).data.user);
 	}
+
+	public async kick(): Promise<PlayerList> {
+		return (await api.delete<never, AxiosResponse<IUser[]>, { user: { id: number } }>('/session/playerlist', { data: { user: { id: this.id } } })).data.map(u => new User(u));
+	}
 }
 
 export interface IUser {
@@ -33,3 +38,5 @@ export interface IUser {
 	isBank: boolean,
 	socketConnection?: string,
 }
+
+export type PlayerList = User[];

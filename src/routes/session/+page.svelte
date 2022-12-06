@@ -5,7 +5,7 @@
 	import { onMount } from 'svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { goto } from '$app/navigation';
-	import { User } from '$lib/types/User';
+	import { type PlayerList, User } from '$lib/types/User';
 	import { apiGetErrorMessage } from '../../axios';
 	import Alert from '$lib/components/Alert.svelte';
 	import { connectToSocket } from '$lib/socket/socket-client';
@@ -20,6 +20,7 @@
 		freeParking: undefined
 	};
 	let sessionPropertiesChanged = false;
+	let playerList: PlayerList = [];
 	
 	SessionStore.subscribe(s => {
 		changePropertiesFormInput = { ...s };
@@ -45,6 +46,8 @@
 					await goto('/');
 				}
 			}
+			
+			playerList = await Session.getConnectedUsers();
 		}
 	);
 	
@@ -62,8 +65,32 @@
 			sessionPropertiesChanged = true;
 		}
 	};
+	
+	let codeIsCopied = false;
+	const copySessionCode = () => {
+		if (!$SessionStore?.code) return;
+		
+		navigator.clipboard.writeText($SessionStore.code);
+		codeIsCopied = true;
+		setTimeout(() => {
+			codeIsCopied = false;
+		}, 1500);
+	};
 </script>
 
+<div>
+	<div class='text-center bg-primary text-white p-2 display-2 font-monospace text-uppercase'
+			 on:click={copySessionCode}
+			 role='button' tabindex='0'>
+		{$SessionStore?.code}
+	</div>
+	<div class='p-1 pb-2 text-center fst-italic bg-light small'>
+		(click to copy)
+		{#if codeIsCopied}
+			copied!
+		{/if}
+	</div>
+</div>
 <form on:submit|preventDefault={changeSessionProperties}>
 	<table class='table table-bordered'>
 		<tr>
@@ -105,20 +132,61 @@
 								 name='free-parking'
 								 type='checkbox'></td>
 		</tr>
-		<tr>
-			<td colspan='2'>
-				<div class='d-flex flex-row justify-content-center'>
-					<div class='w-50 d-flex justify-content-center'>
-						<button class='btn btn-primary w-75' disabled={!$UserStore?.isHost} type='submit'>Change</button>
-						<div class='w-25'>
-							<Spinner promise={sessionGetPromise} />
+		{#if $UserStore?.isHost}
+			<tr>
+				<td colspan='2'>
+					<div class='d-flex flex-row justify-content-center'>
+						<div class='w-50 d-flex justify-content-center'>
+							<button class='btn btn-primary w-75' type='submit'>Change</button>
+							<div class='w-25'>
+								<Spinner promise={sessionGetPromise} />
+							</div>
 						</div>
 					</div>
-				</div>
-			</td>
-		</tr>
+				</td>
+			</tr>
+		{/if}
 	</table>
 </form>
+
+<table class='table'>
+	<thead>
+		<tr>
+			<th class='text-center'>Host</th>
+			<th class='text-center'>Name</th>
+			{#if $UserStore?.isHost}
+				<th class='text-center'>Kick</th>
+			{/if}
+		</tr>
+	</thead>
+	<tbody>
+		{#each playerList as player}
+			<tr class='{player.id === $UserStore?.id ? "table-active" : ""}'>
+				<td class='text-center'>
+					{#if player.isHost}
+						<svg width='2rem' fill='none' stroke='currentColor' viewBox='0 0 24 24'
+								 xmlns='http://www.w3.org/2000/svg'>
+							<path stroke-linecap='round' stroke-linejoin='round' stroke-width='2'
+										d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'></path>
+						</svg>
+					{/if}
+				</td>
+				<td>{player.name}</td>
+				{#if $UserStore?.isHost}
+					<td>
+						{#if player.id !== $UserStore?.id}
+							<button class='btn btn-outline-danger btn-sm' on:click={async ()=>{
+								playerList = await player.kick();
+							}}>X
+							</button>
+						{/if}
+					</td>
+				{/if}
+			</tr>
+		{/each}
+	</tbody>
+</table>
+
 <Alert bind:show={sessionPropertiesChanged} time={4000}>
 	{alertMessage}
 </Alert>
