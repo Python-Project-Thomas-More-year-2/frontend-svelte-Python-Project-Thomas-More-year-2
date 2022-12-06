@@ -65,8 +65,32 @@
 			sessionPropertiesChanged = true;
 		}
 	};
+	
+	let codeIsCopied = false;
+	const copySessionCode = () => {
+		if (!$SessionStore?.code) return;
+		
+		navigator.clipboard.writeText($SessionStore.code);
+		codeIsCopied = true;
+		setTimeout(() => {
+			codeIsCopied = false;
+		}, 1500);
+	};
 </script>
 
+<div>
+	<div class='text-center bg-primary text-white p-2 display-2 font-monospace text-uppercase'
+			 on:click={copySessionCode}
+			 role='button' tabindex='0'>
+		{$SessionStore?.code}
+	</div>
+	<div class='p-1 pb-2 text-center fst-italic bg-light small'>
+		(click to copy)
+		{#if codeIsCopied}
+			copied!
+		{/if}
+	</div>
+</div>
 <form on:submit|preventDefault={changeSessionProperties}>
 	<table class='table table-bordered'>
 		<tr>
