@@ -1,3 +1,5 @@
+import { api } from '../../axios';
+
 export class User {
 	id: number;
 	session_id: number;
@@ -5,6 +7,7 @@ export class User {
 	name: string;
 	isHost: boolean;
 	isBank: boolean;
+	socketConnection?: string;
 
 	constructor(user: IUser) {
 		this.id = user.id;
@@ -13,6 +16,11 @@ export class User {
 		this.name = user.name;
 		this.isHost = user.isHost;
 		this.isBank = user.isBank;
+		this.socketConnection = user.socketConnection;
+	}
+
+	public static async fetch(): Promise<User> {
+		return new User((await api.get<{ user: IUser }>('/user')).data.user);
 	}
 }
 
@@ -23,4 +31,5 @@ export interface IUser {
 	name: string,
 	isHost: boolean,
 	isBank: boolean,
+	socketConnection?: string,
 }

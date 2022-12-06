@@ -30,6 +30,19 @@ export class Session implements ISession {
 		return new Session((await api.get<{ session: ISession }>('/session')).data.session);
 	}
 
+	public static async join(sessionCode: string, username: string): Promise<[Session, User]> {
+		const res = (
+			await api
+				.post<never, AxiosResponse<{ session: ISession, user: IUser, }>>(
+					'/session/join',
+					{
+						session: { code: sessionCode },
+						user: { name: username }
+					})).data;
+
+		return [new Session(res.session), new User(res.user)];
+	}
+
 	public async update(props: ISessionUpdate): Promise<this | never> {
 		const res = await api.patch<never, AxiosResponse<{ session: ISession }>, { session: ISessionUpdate }>('/session', { session: props });
 		return this.setProps(res.data.session);
