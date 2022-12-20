@@ -10,6 +10,7 @@ export class Session implements ISession {
 	goReward: number;
 	freeParkingMoney: number;
 	freeParking: boolean;
+	started: boolean;
 
 	constructor(session: ISession) {
 		this.id = session.id;
@@ -19,6 +20,7 @@ export class Session implements ISession {
 		this.goReward = session.goReward;
 		this.freeParkingMoney = session.freeParkingMoney;
 		this.freeParking = session.freeParking;
+		this.started = session.started;
 	}
 
 	public static async createSession(username: string): Promise<[Session, User]> {
@@ -84,6 +86,7 @@ export interface ISession {
 	goReward: number;
 	freeParkingMoney: number;
 	freeParking: boolean;
+	started: boolean;
 }
 
 export type ISessionUpdate = Pick<ISession, 'startCapital' | 'goReward' | 'seeOthersBalance' | 'freeParking'>;
