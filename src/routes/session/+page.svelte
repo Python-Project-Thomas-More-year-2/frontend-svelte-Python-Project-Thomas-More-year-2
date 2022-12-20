@@ -46,7 +46,7 @@
 			}
 			
 			try {
-				if (!$SocketStore)
+				if (!$SocketStore?.connected)
 					$SocketStore = await connectToSocket($UserStore?.socketConnection);
 				
 				$SocketStore.on('user-connect', () => {
@@ -147,20 +147,36 @@
 								 name='free-parking'
 								 type='checkbox'></td>
 		</tr>
-		{#if $UserStore?.isHost}
-			<tr>
-				<td colspan='2'>
+		<tr>
+			<td>
+				<div>
+					<button class='btn btn-danger' on:click={async () => {
+							if(!$SessionStore || !confirm('Are you sure, you want to leave this session?')) return;
+							await $SessionStore?.leave();
+							goto("/");
+						}} type='button'>
+						
+						{#if $UserStore?.isHost}
+							Delete Session
+						{:else}
+							Leave
+						{/if}
+					</button>
+				</div>
+			</td>
+			<td>
+				{#if $UserStore?.isHost}
 					<div class='d-flex flex-row justify-content-center'>
-						<div class='w-50 d-flex justify-content-center'>
+						<div class='w-75 d-flex justify-content-center'>
 							<button class='btn btn-primary w-75' type='submit'>Change</button>
 							<div class='w-25'>
 								<Spinner promise={sessionGetPromise} />
 							</div>
 						</div>
 					</div>
-				</td>
-			</tr>
-		{/if}
+				{/if}
+			</td>
+		</tr>
 	</table>
 </form>
 

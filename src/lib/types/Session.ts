@@ -47,6 +47,10 @@ export class Session implements ISession {
 		return (await api.get<IUser[]>('/session/playerlist')).data.map(u => new User(u));
 	}
 
+	public async leave(): Promise<void> {
+		await api.delete('/session');
+	}
+
 	public async update(props: ISessionUpdate): Promise<this | never> {
 		const res = await api.patch<never, AxiosResponse<{ session: ISession }>, { session: ISessionUpdate }>('/session', { session: props });
 		return this.setProps(res.data.session);
