@@ -22,6 +22,11 @@
 	let sessionPropertiesChanged = false;
 	let playerList: PlayerList = [];
 	
+	const refreshPlayerList = async () => {
+		playerList = await Session.getConnectedUsers();
+		console.log('Refresh Player List', playerList);
+	};
+	
 	SessionStore.subscribe(s => {
 		changePropertiesFormInput = { ...s };
 	});
@@ -37,17 +42,27 @@
 			
 			if (!$UserStore) {
 				userGetPromise = User.fetch();
-				
-				try {
-					$UserStore = await userGetPromise;
-					if (!$SocketStore)
-						$SocketStore = await connectToSocket($UserStore?.socketConnection);
-				} catch {
-					await goto('/');
-				}
+				$UserStore = await userGetPromise;
 			}
 			
-			playerList = await Session.getConnectedUsers();
+			try {
+				if (!$SocketStore)
+					$SocketStore = await connectToSocket($UserStore?.socketConnection);
+				
+				$SocketStore.on('user-connect', () => {
+					console.log('user-connect');
+					refreshPlayerList();
+				});
+				
+				$SocketStore.on('user-disconnect', () => {
+					console.log('user-disconnect');
+					refreshPlayerList();
+				});
+			} catch {
+				await goto('/');
+			}
+			
+			refreshPlayerList();
 		}
 	);
 	
@@ -153,14 +168,14 @@
 	<thead>
 		<tr>
 			<th class='text-center'>Host</th>
-			<th class='text-center'>Name</th>
+			<th class='text-center' colspan='2'>Name</th>
 			{#if $UserStore?.isHost}
 				<th class='text-center'>Kick</th>
 			{/if}
 		</tr>
 	</thead>
 	<tbody>
-		{#each playerList as player}
+		{#each playerList.sort((a, b) => a.name < b.name ? -1 : 1) as player}
 			<tr class='{player.id === $UserStore?.id ? "table-active" : ""}'>
 				<td class='text-center'>
 					{#if player.isHost}
@@ -170,6 +185,12 @@
 										d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'></path>
 						</svg>
 					{/if}
+				</td>
+				<td>
+					<div class='connection-circle rounded-circle bg-success'
+							 class:bg-danger={!player.socketConnection}>
+						&nbsp;
+					</div>
 				</td>
 				<td>{player.name}</td>
 				{#if $UserStore?.isHost}
@@ -190,3 +211,12 @@
 <Alert bind:show={sessionPropertiesChanged} time={4000}>
 	{alertMessage}
 </Alert>
+
+<style lang='scss'>
+	.connection-circle {
+		$wh: 1rem;
+		
+		width: $wh;
+		height: $wh;
+	}
+</style>
