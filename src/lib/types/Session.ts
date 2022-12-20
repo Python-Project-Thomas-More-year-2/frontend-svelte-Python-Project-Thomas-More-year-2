@@ -53,6 +53,10 @@ export class Session implements ISession {
 		await api.delete('/session');
 	}
 
+	public async start(): Promise<void> {
+		await api.post('/session/start');
+	}
+
 	public async update(props: ISessionUpdate): Promise<this | never> {
 		const res = await api.patch<never, AxiosResponse<{ session: ISession }>, { session: ISessionUpdate }>('/session', { session: props });
 		return this.setProps(res.data.session);

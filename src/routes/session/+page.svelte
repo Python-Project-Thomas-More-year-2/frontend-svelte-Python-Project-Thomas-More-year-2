@@ -36,7 +36,11 @@
 				sessionGetPromise = Session.fetchSession();
 				
 				sessionGetPromise
-					.then((s: Session) => $SessionStore = s)
+					.then((s: Session) => {
+						$SessionStore = s;
+						if (s.started)
+							goto('/session/game');
+					})
 					.catch(() => goto('/'));
 			}
 			
@@ -58,6 +62,12 @@
 					console.log('user-disconnect');
 					refreshPlayerList();
 				});
+				
+				$SocketStore.on('session-start', () => {
+					console.log('session-start');
+					goto('/session/game');
+				});
+				
 			} catch {
 				await goto('/');
 			}
@@ -90,6 +100,10 @@
 		setTimeout(() => {
 			codeIsCopied = false;
 		}, 1500);
+	};
+	
+	const sessionStart = () => {
+		if ($SessionStore) $SessionStore.start();
 	};
 </script>
 
@@ -150,7 +164,7 @@
 		<tr>
 			<td>
 				<div>
-					<button class='btn btn-danger' on:click={async () => {
+					<button class='btn btn-danger w-100' on:click={async () => {
 							if(!$SessionStore || !confirm('Are you sure, you want to leave this session?')) return;
 							await $SessionStore?.leave();
 							goto("/");
@@ -166,17 +180,30 @@
 			</td>
 			<td>
 				{#if $UserStore?.isHost}
-					<div class='d-flex flex-row justify-content-center'>
-						<div class='w-75 d-flex justify-content-center'>
-							<button class='btn btn-primary w-75' type='submit'>Change</button>
-							<div class='w-25'>
-								<Spinner promise={sessionGetPromise} />
-							</div>
-						</div>
+					<div class='w-100'>
+						<button class='btn btn-primary w-100 d-inline-block' type='submit'>
+							Change
+							{#await sessionGetPromise}
+									<span class='spinner'>
+										<Spinner class='h-100 w-100' promise={sessionGetPromise} />
+									</span>
+							{/await}
+						</button>
 					</div>
 				{/if}
 			</td>
 		</tr>
+		{#if $UserStore?.isHost}
+			<tr>
+				<td colspan='2'>
+					<div>
+						<button class='btn btn-success w-100' on:click={sessionStart} type='button'>
+							START
+						</button>
+					</div>
+				</td>
+			</tr>
+		{/if}
 	</table>
 </form>
 
@@ -234,5 +261,11 @@
 		
 		width: $wh;
 		height: $wh;
+	}
+	
+	.spinner {
+		display: inline-block;
+		height: 1rem;
+		width: 1rem;
 	}
 </style>
