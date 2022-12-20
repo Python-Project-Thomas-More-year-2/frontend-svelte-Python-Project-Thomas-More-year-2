@@ -7,7 +7,6 @@ export class User {
 	money: number;
 	name: string;
 	isHost: boolean;
-	isBank: boolean;
 	socketConnection?: string;
 
 	constructor(user: IUser) {
@@ -16,7 +15,6 @@ export class User {
 		this.money = user.money;
 		this.name = user.name;
 		this.isHost = user.isHost;
-		this.isBank = user.isBank;
 		this.socketConnection = user.socketConnection;
 	}
 
@@ -35,7 +33,6 @@ export interface IUser {
 	money: number,
 	name: string,
 	isHost: boolean,
-	isBank: boolean,
 	socketConnection?: string,
 }
 
