@@ -56,6 +56,10 @@ export class Session implements ISession {
 		return this.setProps(res.data.session);
 	}
 
+	public async fetch(): Promise<this | never> {
+		return this.setProps((await api.get<{ session: ISession }>('/session')).data.session);
+	}
+
 	public setProps(props: Partial<ISession>): this {
 		const a: (keyof ISession)[] = [
 			'id',

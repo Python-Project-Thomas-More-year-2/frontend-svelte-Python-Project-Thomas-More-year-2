@@ -91,6 +91,7 @@
 				<th class='text-center'>Money</th>
 				{#if $UserStore?.isHost}
 					<th class='text-center'>Kick</th>
+					<th class='text-center'>Passes Go</th>
 				{/if}
 			</tr>
 		</thead>
@@ -122,6 +123,11 @@
 							}}>X
 								</button>
 							{/if}
+						</td>
+						<td>
+							<button type='button' class='btn btn-primary' on:click={() => { player.passesGo() }}>
+								Go
+							</button>
 						</td>
 					{/if}
 				</tr>
