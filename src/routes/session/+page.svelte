@@ -36,8 +36,6 @@
 				sessionGetPromise
 					.then((s: Session) => {
 						$SessionStore = s;
-						if (s.started)
-							goto('/session/game');
 					})
 					.catch(() => goto('/'));
 			}
@@ -80,6 +78,9 @@
 			sessionPropertiesChanged = true;
 		}
 	};
+	
+	if ($SessionStore?.started)
+		goto('/session/game');
 	
 	let codeIsCopied = false;
 	const copySessionCode = () => {
