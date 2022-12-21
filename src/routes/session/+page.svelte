@@ -16,9 +16,7 @@
 	let alertMessage = '';
 	let changePropertiesFormInput: Partial<ISessionUpdate> = {
 		startCapital: undefined,
-		goReward: undefined,
-		seeOthersBalance: undefined,
-		freeParking: undefined
+		goReward: undefined
 	};
 	let sessionPropertiesChanged = false;
 	
@@ -132,25 +130,6 @@
 								 readonly={!$UserStore?.isHost}
 								 type='number'>
 			</td>
-		</tr>
-		<tr>
-			<th scope='row'><label for='see-others-balance'>See Others Balance</label></th>
-			<td><input bind:checked={changePropertiesFormInput.seeOthersBalance}
-								 class='form-check-inline'
-								 disabled={!$UserStore?.isHost}
-								 id='see-others-balance'
-								 name='see-others-balance'
-								 type='checkbox'>
-			</td>
-		</tr>
-		<tr>
-			<th scope='row'><label for='free-parking'>Free Parking</label></th>
-			<td><input bind:checked={changePropertiesFormInput.freeParking}
-								 class='form-check-inline'
-								 disabled={!$UserStore?.isHost}
-								 id='free-parking'
-								 name='free-parking'
-								 type='checkbox'></td>
 		</tr>
 		<tr>
 			<td>
