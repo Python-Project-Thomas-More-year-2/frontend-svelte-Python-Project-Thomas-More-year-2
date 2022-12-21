@@ -53,6 +53,11 @@
 					fetchTransactions();
 				});
 				
+				$SocketStore.on('transaction-requested', () => {
+					console.log('transaction-requested');
+					fetchTransactions();
+				});
+				
 				$SocketStore.on('user-balance-update', () => {
 					console.log('user-balance-update');
 					fetchTransactions();
@@ -109,6 +114,18 @@
 			await users.find(p => p.id == selectedPlayerIdBankMoneySend)?.sendMoney(valueBankMoneySend);
 		} catch (e) {
 			console.error('addMoneyToSelectedUser', e);
+			error(e?.response?.data?.error || e?.response?.data?.message || 'Something went wrong');
+		}
+	};
+	
+	let valueBankMoneyRequest = 0;
+	let selectedPlayerIdBankMoneyRequest: number;
+	const requestMoneyToSelectedUser = async () => {
+		if (!selectedPlayerIdBankMoneyRequest && selectedPlayerIdBankMoneyRequest !== 0) return;
+		try {
+			await users.find(p => p.id == selectedPlayerIdBankMoneyRequest)?.requestMoneyFromBank(valueBankMoneyRequest);
+		} catch (e) {
+			console.error('requestMoneyToSelectedUser', e);
 			error(e?.response?.data?.error || e?.response?.data?.message || 'Something went wrong');
 		}
 	};
@@ -302,6 +319,19 @@
 				</select>
 				<span class='input-group-text'>$</span>
 				<input bind:value={valueBankMoneySend} class='form-control' min='0' type='number'>
+				<button class='form-control' type='submit'>Send</button>
+			</div>
+		</form>
+		<form on:submit|preventDefault={requestMoneyToSelectedUser}>
+			<span>Ask user to pay (money goes to the bank)</span>
+			<div class='input-group'>
+				<select bind:value={selectedPlayerIdBankMoneyRequest} class='form-select'>
+					{#each users as player}
+						<option value={player.id}>{player.name}</option>
+					{/each}
+				</select>
+				<span class='input-group-text'>$</span>
+				<input bind:value={valueBankMoneyRequest} class='form-control' min='0' type='number'>
 				<button class='form-control' type='submit'>Send</button>
 			</div>
 		</form>
