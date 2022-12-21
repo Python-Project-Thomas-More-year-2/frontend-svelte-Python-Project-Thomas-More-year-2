@@ -2,7 +2,11 @@ import { api } from '../index';
 import type { AxiosResponse } from 'axios';
 
 export const getTransactionsToPay = async (): Promise<ITransaction[]> => {
-	return (await api.get<ITransaction[]>('/session/game/transacions/payer')).data;
+	return (await api.get<ITransaction[]>('/session/game/transactions/payer')).data;
+};
+
+export const getTransactionsSender = async (): Promise<ITransaction[]> => {
+	return (await api.get<ITransaction[]>('/session/game/transactions/sender')).data;
 };
 
 export const payForTransaction = async ({ id }: ITransaction): Promise<void> => {

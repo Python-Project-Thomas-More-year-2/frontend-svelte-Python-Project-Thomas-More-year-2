@@ -9,7 +9,7 @@
 	import Spinner from '$lib/components/Spinner.svelte';
 	import Alert from '$lib/components/Alert.svelte';
 	import type { ITransaction } from '../../../axios/helpers/transactions';
-	import { getTransactionsToPay, payForTransaction } from '../../../axios/helpers/transactions';
+	import { getTransactionsSender, getTransactionsToPay, payForTransaction } from '../../../axios/helpers/transactions';
 	
 	let users: UserList = [];
 	let playerList: PlayerList = new PlayerList().subscribe(players => users = players);
@@ -18,7 +18,12 @@
 	let userGetPromise: Promise<User>;
 	
 	let transactionsToPay: ITransaction[] = [];
+	let transactionsToGetPayed: ITransaction[] = [];
 	
+	const fetchTransactions = () => {
+		getTransactionsToPay().then(t => transactionsToPay = t);
+		getTransactionsSender().then(t => transactionsToGetPayed = t);
+	};
 	
 	onMount(async () => {
 			if (!$SessionStore) {
@@ -45,19 +50,19 @@
 				
 				$SocketStore.on('transaction-requested-rent', () => {
 					console.log('transaction-requested-rent');
-					getTransactionsToPay().then(t => transactionsToPay = t);
+					fetchTransactions();
 				});
 				
 				$SocketStore.on('user-balance-update', () => {
 					console.log('user-balance-update');
-					getTransactionsToPay().then(t => transactionsToPay = t);
+					fetchTransactions();
 				});
 			} catch {
 				await goto('/');
 			}
 			
 			playerList.fetch();
-			getTransactionsToPay().then(t => transactionsToPay = t);
+			fetchTransactions();
 		}
 	);
 	
@@ -89,6 +94,7 @@
 		if (!selectedPlayerIdRequestPersonal && selectedPlayerIdRequestPersonal !== 0) return;
 		try {
 			await $UserStore?.requestMoneyFrom(users.find(p => p.id == selectedPlayerIdRequestPersonal), valueRequestPersonal);
+			fetchTransactions();
 		} catch (e) {
 			console.error('requestPersonal', e);
 			error(e?.response?.data?.error || e?.response?.data?.message || 'Something went wrong');
@@ -110,7 +116,7 @@
 	const payForTransactionFunction = (transaction: ITransaction) => (async () => {
 		try {
 			await payForTransaction(transaction);
-			getTransactionsToPay().then(t => transactionsToPay = t);
+			fetchTransactions();
 		} catch (e) {
 			console.error('Pay for transaction', e);
 			error(e?.response?.data?.error || e?.response?.data?.message || 'Something went wrong');
@@ -202,38 +208,69 @@
 </Alert>
 
 <div>
-	<table class='table'>
-		<thead>
-			<tr>
-				<th>To</th>
-				<th>Amount</th>
-				<th>Pay</th>
-			</tr>
-		</thead>
-		<tbody>
-			{#each transactionsToPay as transaction}
+	<div>
+		<table class='table'>
+			<caption class='caption-top'>To pay</caption>
+			<thead>
 				<tr>
-					<td>
-						{#if transaction.request_sender_id}
-							{users.find(p => p.id === transaction.request_sender_id)?.name}
-						{:else}
-							<u>Bank</u>
-						{/if}
-					</td>
-					<td>{transaction.amount}</td>
-					<td>
-						<button
-							type='button'
-							class='btn btn-primary'
-							on:click={payForTransactionFunction(transaction)}>
-							Pay
-						</button>
-					</td>
+					<th>To</th>
+					<th>Amount</th>
+					<th>Pay</th>
 				</tr>
-			{/each}
-		</tbody>
-	</table>
+			</thead>
+			<tbody>
+				{#each transactionsToPay as transaction}
+					<tr>
+						<td>
+							{#if transaction.request_sender_id}
+								{users.find(p => p.id === transaction.request_sender_id)?.name}
+							{:else}
+								<u>Bank</u>
+							{/if}
+						</td>
+						<td>{transaction.amount}</td>
+						<td>
+							<button
+								type='button'
+								class='btn btn-primary'
+								on:click={payForTransactionFunction(transaction)}>
+								Pay
+							</button>
+						</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</div>
+	<hr>
+	<div class='bg-light'>
+		<table class='table'>
+			<caption class='caption-top'>Get payed</caption>
+			<thead>
+				<tr>
+					<th>From</th>
+					<th>Amount</th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each transactionsToGetPayed as transaction}
+					<tr>
+						<td>
+							{#if transaction.request_payer_id}
+								{users.find(p => p.id === transaction.request_payer_id)?.name}
+							{:else}
+								<u>Bank</u>
+							{/if}
+						</td>
+						<td>{transaction.amount}</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</div>
 </div>
+
+<hr>
 
 <div>
 	<form on:submit|preventDefault={requestPersonal}>
