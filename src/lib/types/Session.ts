@@ -6,20 +6,14 @@ export class Session implements ISession {
 	id: number;
 	code: string;
 	startCapital: number;
-	seeOthersBalance: boolean;
 	goReward: number;
-	freeParkingMoney: number;
-	freeParking: boolean;
 	started: boolean;
 
 	constructor(session: ISession) {
 		this.id = session.id;
 		this.code = session.code;
 		this.startCapital = session.startCapital;
-		this.seeOthersBalance = session.seeOthersBalance;
 		this.goReward = session.goReward;
-		this.freeParkingMoney = session.freeParkingMoney;
-		this.freeParking = session.freeParking;
 		this.started = session.started;
 	}
 
@@ -62,15 +56,16 @@ export class Session implements ISession {
 		return this.setProps(res.data.session);
 	}
 
+	public async fetch(): Promise<this | never> {
+		return this.setProps((await api.get<{ session: ISession }>('/session')).data.session);
+	}
+
 	public setProps(props: Partial<ISession>): this {
 		const a: (keyof ISession)[] = [
 			'id',
 			'code',
 			'startCapital',
-			'seeOthersBalance',
-			'goReward',
-			'freeParkingMoney',
-			'freeParking'
+			'goReward'
 		];
 		for (const key of a) {
 			if (typeof props[key] !== 'undefined' && props[key] !== null)
@@ -86,11 +81,8 @@ export interface ISession {
 	id: number;
 	code: string;
 	startCapital: number;
-	seeOthersBalance: boolean;
 	goReward: number;
-	freeParkingMoney: number;
-	freeParking: boolean;
 	started: boolean;
 }
 
-export type ISessionUpdate = Pick<ISession, 'startCapital' | 'goReward' | 'seeOthersBalance' | 'freeParking'>;
+export type ISessionUpdate = Pick<ISession, 'startCapital' | 'goReward'>;
