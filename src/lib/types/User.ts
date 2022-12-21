@@ -22,7 +22,7 @@ export class User {
 		return new User((await api.get<{ user: IUser }>('/user')).data.user);
 	}
 
-	public async kick(): Promise<PlayerList> {
+	public async kick(): Promise<UserList> {
 		return (await api.delete<never, AxiosResponse<IUser[]>, { user: { id: number } }>('/session/playerlist', { data: { user: { id: this.id } } })).data.map(u => new User(u));
 	}
 }
@@ -36,4 +36,4 @@ export interface IUser {
 	socketConnection?: string,
 }
 
-export type PlayerList = User[];
+export type UserList = User[];
