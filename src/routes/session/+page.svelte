@@ -54,6 +54,13 @@
 					goto('/session/game');
 				});
 				
+				$SocketStore.on('session-settings-update', async () => {
+					console.log('session-settings-update');
+					if (!$UserStore?.isHost)
+						$SessionStore = await $SessionStore?.fetch();
+				});
+				
+				
 			} catch {
 				await goto('/');
 			}
