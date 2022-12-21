@@ -5,10 +5,11 @@
 	import { onMount } from 'svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { goto } from '$app/navigation';
-	import { type PlayerList, User } from '$lib/types/User';
+	import { User, type UserList } from '$lib/types/User';
 	import { apiGetErrorMessage } from '../../axios';
 	import Alert from '$lib/components/Alert.svelte';
 	import { connectToSocket } from '$lib/socket/socket-client';
+	import { PlayerList } from '$lib/types/PlayerList';
 	
 	let sessionGetPromise: Promise<Session>;
 	let userGetPromise: Promise<User>;
@@ -20,12 +21,9 @@
 		freeParking: undefined
 	};
 	let sessionPropertiesChanged = false;
-	let playerList: PlayerList = [];
 	
-	const refreshPlayerList = async () => {
-		playerList = await Session.getConnectedUsers();
-		console.log('Refresh Player List', playerList);
-	};
+	let users: UserList = [];
+	let playerList: PlayerList = new PlayerList().subscribe(players => users = players);
 	
 	SessionStore.subscribe(s => {
 		changePropertiesFormInput = { ...s };
@@ -36,7 +34,9 @@
 				sessionGetPromise = Session.fetchSession();
 				
 				sessionGetPromise
-					.then((s: Session) => $SessionStore = s)
+					.then((s: Session) => {
+						$SessionStore = s;
+					})
 					.catch(() => goto('/'));
 			}
 			
@@ -46,23 +46,21 @@
 			}
 			
 			try {
-				if (!$SocketStore)
+				if (!$SocketStore?.connected)
 					$SocketStore = await connectToSocket($UserStore?.socketConnection);
 				
-				$SocketStore.on('user-connect', () => {
-					console.log('user-connect');
-					refreshPlayerList();
+				playerList.subscribeToSocket($SocketStore);
+				
+				$SocketStore.on('session-start', () => {
+					console.log('session-start');
+					goto('/session/game');
 				});
 				
-				$SocketStore.on('user-disconnect', () => {
-					console.log('user-disconnect');
-					refreshPlayerList();
-				});
 			} catch {
 				await goto('/');
 			}
 			
-			refreshPlayerList();
+			playerList.fetch();
 		}
 	);
 	
@@ -81,6 +79,9 @@
 		}
 	};
 	
+	if ($SessionStore?.started)
+		goto('/session/game');
+	
 	let codeIsCopied = false;
 	const copySessionCode = () => {
 		if (!$SessionStore?.code) return;
@@ -90,6 +91,10 @@
 		setTimeout(() => {
 			codeIsCopied = false;
 		}, 1500);
+	};
+	
+	const sessionStart = () => {
+		if ($SessionStore) $SessionStore.start();
 	};
 </script>
 
@@ -147,16 +152,45 @@
 								 name='free-parking'
 								 type='checkbox'></td>
 		</tr>
+		<tr>
+			<td>
+				<div>
+					<button class='btn btn-danger w-100' on:click={async () => {
+							if(!$SessionStore || !confirm('Are you sure, you want to leave this session?')) return;
+							await $SessionStore?.leave();
+							goto("/");
+						}} type='button'>
+						
+						{#if $UserStore?.isHost}
+							Delete Session
+						{:else}
+							Leave
+						{/if}
+					</button>
+				</div>
+			</td>
+			<td>
+				{#if $UserStore?.isHost}
+					<div class='w-100'>
+						<button class='btn btn-primary w-100 d-inline-block' type='submit'>
+							Change
+							{#await sessionGetPromise}
+									<span class='spinner'>
+										<Spinner class='h-100 w-100' promise={sessionGetPromise} />
+									</span>
+							{/await}
+						</button>
+					</div>
+				{/if}
+			</td>
+		</tr>
 		{#if $UserStore?.isHost}
 			<tr>
 				<td colspan='2'>
-					<div class='d-flex flex-row justify-content-center'>
-						<div class='w-50 d-flex justify-content-center'>
-							<button class='btn btn-primary w-75' type='submit'>Change</button>
-							<div class='w-25'>
-								<Spinner promise={sessionGetPromise} />
-							</div>
-						</div>
+					<div>
+						<button class='btn btn-success w-100' on:click={sessionStart} type='button'>
+							START
+						</button>
 					</div>
 				</td>
 			</tr>
@@ -175,7 +209,7 @@
 		</tr>
 	</thead>
 	<tbody>
-		{#each playerList.sort((a, b) => a.name < b.name ? -1 : 1) as player}
+		{#each users as player}
 			<tr class='{player.id === $UserStore?.id ? "table-active" : ""}'>
 				<td class='text-center'>
 					{#if player.isHost}
@@ -197,7 +231,7 @@
 					<td>
 						{#if player.id !== $UserStore?.id}
 							<button class='btn btn-outline-danger btn-sm' on:click={async ()=>{
-								playerList = await player.kick();
+								playerList.players = await player.kick();
 							}}>X
 							</button>
 						{/if}
@@ -218,5 +252,11 @@
 		
 		width: $wh;
 		height: $wh;
+	}
+	
+	.spinner {
+		display: inline-block;
+		height: 1rem;
+		width: 1rem;
 	}
 </style>

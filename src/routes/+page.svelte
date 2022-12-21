@@ -1,6 +1,6 @@
 <script lang='ts'>
-	import { Session } from '../lib/types/Session';
-	import { User } from '../lib/types/User';
+	import { Session } from '$lib/types/Session';
+	import { User } from '$lib/types/User';
 	import { SessionStore, UserStore } from '../stores';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { apiGetErrorMessage } from '../axios';
@@ -12,10 +12,10 @@
 	
 	let status: Status = Status.CHOOSER;
 	let formErrorMessage = '';
-	let createSessionPromise: Promise<[Session, User]>;
+	let createSessionPromise: Promise<[Session, User]> | null = null;
 	
 	let joinSession: {
-		promise?: Promise<[Session, User]>,
+		promise: Promise<[Session, User]> | null,
 		errorMessage: string,
 		input: {
 			sessionCode: string,
