@@ -7,6 +7,7 @@
 	import { goto } from '$app/navigation';
 	import { connectToSocket } from '$lib/socket/socket-client';
 	import Spinner from '$lib/components/Spinner.svelte';
+	import Alert from '$lib/components/Alert.svelte';
 	
 	let users: UserList = [];
 	let playerList: PlayerList = new PlayerList().subscribe(players => users = players);
@@ -54,6 +55,30 @@
 		setTimeout(() => {
 			codeIsCopied = false;
 		}, 1500);
+	};
+	
+	let showAlert = false;
+	let alertMessage = '';
+	const error = (message: string) => {
+		if (showAlert) {
+			console.error('Error:', message);
+		} else {
+			alertMessage = message;
+			showAlert = true;
+		}
+	};
+	
+	
+	let value = 0;
+	let selectedPlayerId: number;
+	const addMoneyToSelectedUser = async () => {
+		if (!selectedPlayerId && selectedPlayerId !== 0) return;
+		try {
+			await users.find(p => p.id == selectedPlayerId)?.sendMoney(value);
+		} catch (e) {
+			console.error('addMoneyToSelectedUser', e);
+			error(e?.response?.data?.error || e?.response?.data?.message || 'Something went wrong');
+		}
 	};
 </script>
 
@@ -136,7 +161,27 @@
 	</table>
 {/await}
 
+<Alert bind:show={showAlert} time={4000}>
+	{alertMessage}
+</Alert>
+
 <div>
+	{#if $UserStore?.isHost}
+		<form on:submit|preventDefault={addMoneyToSelectedUser}>
+			<span>Send Bank money to user</span>
+			<div class='input-group'>
+				<select bind:value={selectedPlayerId} class='form-select'>
+					{#each users as player}
+						<option value={player.id}>{player.name}</option>
+					{/each}
+				</select>
+				<span class='input-group-text'>$</span>
+				<input bind:value={value} class='form-control' min='0' type='number'>
+				<button class='form-control' type='submit'>Send</button>
+			</div>
+		</form>
+		<hr>
+	{/if}
 	<div>
 		<button class='btn btn-danger w-100' on:click={async () => {
 							if(!$SessionStore || !confirm('Are you sure, you want to leave this session?')) return;

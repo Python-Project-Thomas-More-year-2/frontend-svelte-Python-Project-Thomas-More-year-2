@@ -33,6 +33,13 @@ export class User {
 			}
 		});
 	}
+
+	public async sendMoney(amount: number): Promise<void> {
+		await api.post<never, AxiosResponse<Record<string, never>>, { user: { id: number }, transaction: { amount: number } }>('/session/game/bank-money', {
+			user: { id: this.id },
+			transaction: { amount }
+		});
+	}
 }
 
 export interface IUser {
