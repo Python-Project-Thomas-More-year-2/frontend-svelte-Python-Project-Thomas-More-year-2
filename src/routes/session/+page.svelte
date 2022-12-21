@@ -5,10 +5,11 @@
 	import { onMount } from 'svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { goto } from '$app/navigation';
-	import { type PlayerList, User } from '$lib/types/User';
+	import { User, type UserList } from '$lib/types/User';
 	import { apiGetErrorMessage } from '../../axios';
 	import Alert from '$lib/components/Alert.svelte';
 	import { connectToSocket } from '$lib/socket/socket-client';
+	import { PlayerList } from '$lib/types/PlayerList';
 	
 	let sessionGetPromise: Promise<Session>;
 	let userGetPromise: Promise<User>;
@@ -20,12 +21,9 @@
 		freeParking: undefined
 	};
 	let sessionPropertiesChanged = false;
-	let playerList: PlayerList = [];
 	
-	const refreshPlayerList = async () => {
-		playerList = await Session.getConnectedUsers();
-		console.log('Refresh Player List', playerList);
-	};
+	let users: UserList = [];
+	let playerList: PlayerList = new PlayerList().subscribe(players => users = players);
 	
 	SessionStore.subscribe(s => {
 		changePropertiesFormInput = { ...s };
@@ -53,15 +51,7 @@
 				if (!$SocketStore?.connected)
 					$SocketStore = await connectToSocket($UserStore?.socketConnection);
 				
-				$SocketStore.on('user-connect', () => {
-					console.log('user-connect');
-					refreshPlayerList();
-				});
-				
-				$SocketStore.on('user-disconnect', () => {
-					console.log('user-disconnect');
-					refreshPlayerList();
-				});
+				playerList.subscribeToSocket($SocketStore);
 				
 				$SocketStore.on('session-start', () => {
 					console.log('session-start');
@@ -72,7 +62,7 @@
 				await goto('/');
 			}
 			
-			refreshPlayerList();
+			playerList.fetch();
 		}
 	);
 	
@@ -218,7 +208,7 @@
 		</tr>
 	</thead>
 	<tbody>
-		{#each playerList.sort((a, b) => a.name < b.name ? -1 : 1) as player}
+		{#each users as player}
 			<tr class='{player.id === $UserStore?.id ? "table-active" : ""}'>
 				<td class='text-center'>
 					{#if player.isHost}
@@ -240,7 +230,7 @@
 					<td>
 						{#if player.id !== $UserStore?.id}
 							<button class='btn btn-outline-danger btn-sm' on:click={async ()=>{
-								playerList = await player.kick();
+								playerList.players = await player.kick();
 							}}>X
 							</button>
 						{/if}

@@ -1,6 +1,6 @@
 import { api } from '../../axios';
 import type { AxiosResponse } from 'axios';
-import { type IUser, type PlayerList, User } from './User';
+import { type IUser, User, type UserList } from './User';
 
 export class Session implements ISession {
 	id: number;
@@ -45,7 +45,7 @@ export class Session implements ISession {
 		return [new Session(res.session), new User(res.user)];
 	}
 
-	public static async getConnectedUsers(): Promise<PlayerList> {
+	public static async getConnectedUsers(): Promise<UserList> {
 		return (await api.get<IUser[]>('/session/playerlist')).data.map(u => new User(u));
 	}
 
