@@ -1,5 +1,6 @@
 <script lang='ts'>
-	export let promise: Promise<never> | undefined;
+	//eslint-disable-next-line @typescript-eslint/no-empty-function
+	export let promise: Promise<never> | undefined = new Promise(() => {});
 	//noinspection JSUnusedGlobalSymbols,ReservedWordAsName
 	export { className as class };
 	let className = '';

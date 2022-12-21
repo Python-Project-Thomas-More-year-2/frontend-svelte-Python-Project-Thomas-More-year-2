@@ -7,7 +7,6 @@ export class User {
 	money: number;
 	name: string;
 	isHost: boolean;
-	isBank: boolean;
 	socketConnection?: string;
 
 	constructor(user: IUser) {
@@ -16,7 +15,6 @@ export class User {
 		this.money = user.money;
 		this.name = user.name;
 		this.isHost = user.isHost;
-		this.isBank = user.isBank;
 		this.socketConnection = user.socketConnection;
 	}
 
@@ -24,7 +22,7 @@ export class User {
 		return new User((await api.get<{ user: IUser }>('/user')).data.user);
 	}
 
-	public async kick(): Promise<PlayerList> {
+	public async kick(): Promise<UserList> {
 		return (await api.delete<never, AxiosResponse<IUser[]>, { user: { id: number } }>('/session/playerlist', { data: { user: { id: this.id } } })).data.map(u => new User(u));
 	}
 }
@@ -35,8 +33,7 @@ export interface IUser {
 	money: number,
 	name: string,
 	isHost: boolean,
-	isBank: boolean,
 	socketConnection?: string,
 }
 
-export type PlayerList = User[];
+export type UserList = User[];
