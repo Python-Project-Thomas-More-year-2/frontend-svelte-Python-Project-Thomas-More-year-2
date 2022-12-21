@@ -51,6 +51,10 @@ export class PlayerList {
 		});
 	}
 
+	public getPlayer(id: number): User | undefined {
+		return this.players.find(p => p.id === id);
+	}
+
 	public async fetch() {
 		try {
 			this.players = await Session.getConnectedUsers();
