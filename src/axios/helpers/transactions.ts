@@ -9,6 +9,10 @@ export const getTransactionsSender = async (): Promise<ITransaction[]> => {
 	return (await api.get<ITransaction[]>('/session/game/transactions/sender')).data;
 };
 
+export const getTransactionsToBank = async (): Promise<ITransaction[]> => {
+	return (await api.get<ITransaction[]>('/session/game/transactions/bank')).data;
+};
+
 export const payForTransaction = async ({ id }: ITransaction): Promise<void> => {
 	await api.put<never, AxiosResponse<Record<string, never>>, { transaction: { id: number } }>('/session/game/pay-rent', { transaction: { id } });
 };

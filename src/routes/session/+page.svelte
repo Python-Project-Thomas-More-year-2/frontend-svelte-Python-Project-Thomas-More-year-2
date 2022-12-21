@@ -60,7 +60,13 @@
 						$SessionStore = await $SessionStore?.fetch();
 				});
 				
-				
+				$SocketStore.on('kick', () => {
+					console.log('kick');
+					
+					Session.fetchSession()
+						.then((s: Session) => $SessionStore = s)
+						.catch(() => goto('/'));
+				});
 			} catch {
 				await goto('/');
 			}

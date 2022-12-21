@@ -5,6 +5,7 @@
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { apiGetErrorMessage } from '../axios';
 	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
 	
 	enum Status {
 		CHOOSER, CREATE, JOIN
@@ -29,6 +30,18 @@
 			username: ''
 		}
 	};
+	
+	onMount(async () => {
+		//check if user already has a session
+		if (!$UserStore) {
+			try {
+				$UserStore = await User.fetch();
+				await goto('/session');
+			} catch (_) {
+				console.log('User has no active game session');
+			}
+		}
+	});
 	
 	const changeStatus = (st: Status) => () => {
 		status = st;
