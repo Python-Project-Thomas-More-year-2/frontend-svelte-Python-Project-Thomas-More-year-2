@@ -43,6 +43,12 @@ export class PlayerList {
 			//noinspection JSIgnoredPromiseFromCall
 			this.fetch();
 		});
+
+		socket.on('user-balance-update', () => {
+			console.log('user-balance-update');
+			//noinspection JSIgnoredPromiseFromCall
+			this.fetch();
+		});
 	}
 
 	public async fetch() {

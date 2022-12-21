@@ -25,6 +25,14 @@ export class User {
 	public async kick(): Promise<UserList> {
 		return (await api.delete<never, AxiosResponse<IUser[]>, { user: { id: number } }>('/session/playerlist', { data: { user: { id: this.id } } })).data.map(u => new User(u));
 	}
+
+	public async passesGo(): Promise<void> {
+		await api.post<never, AxiosResponse<Record<string, never>>, { user: { id: number } }>('/session/game/go', {
+			user: {
+				id: this.id
+			}
+		});
+	}
 }
 
 export interface IUser {
