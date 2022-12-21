@@ -9,7 +9,12 @@
 	import Spinner from '$lib/components/Spinner.svelte';
 	import Alert from '$lib/components/Alert.svelte';
 	import type { ITransaction } from '../../../axios/helpers/transactions';
-	import { getTransactionsSender, getTransactionsToPay, payForTransaction } from '../../../axios/helpers/transactions';
+	import {
+		getTransactionsSender,
+		getTransactionsToBank,
+		getTransactionsToPay,
+		payForTransaction
+	} from '../../../axios/helpers/transactions';
 	
 	let users: UserList = [];
 	let playerList: PlayerList = new PlayerList().subscribe(players => users = players);
@@ -19,10 +24,12 @@
 	
 	let transactionsToPay: ITransaction[] = [];
 	let transactionsToGetPayed: ITransaction[] = [];
+	let transactionsToPayBank: ITransaction[] = [];
 	
 	const fetchTransactions = () => {
 		getTransactionsToPay().then(t => transactionsToPay = t);
 		getTransactionsSender().then(t => transactionsToGetPayed = t);
+		getTransactionsToBank().then(t => transactionsToPayBank = t);
 	};
 	
 	onMount(async () => {
@@ -136,6 +143,7 @@
 		if (!selectedPlayerIdBankMoneySend && selectedPlayerIdBankMoneySend !== 0) return;
 		try {
 			await users.find(p => p.id == selectedPlayerIdBankMoneySend)?.sendMoney(valueBankMoneySend);
+			fetchTransactions();
 		} catch (e) {
 			console.error('addMoneyToSelectedUser', e);
 			error(e?.response?.data?.error || e?.response?.data?.message || 'Something went wrong');
@@ -148,6 +156,7 @@
 		if (!selectedPlayerIdBankMoneyRequest && selectedPlayerIdBankMoneyRequest !== 0) return;
 		try {
 			await users.find(p => p.id == selectedPlayerIdBankMoneyRequest)?.requestMoneyFromBank(valueBankMoneyRequest);
+			fetchTransactions();
 		} catch (e) {
 			console.error('requestMoneyToSelectedUser', e);
 			error(e?.response?.data?.error || e?.response?.data?.message || 'Something went wrong');
@@ -309,6 +318,29 @@
 			</tbody>
 		</table>
 	</div>
+	{#if $UserStore?.isHost}
+		<div>
+			<table class='table'>
+				<caption class='caption-top'>Has to pay the bank</caption>
+				<thead>
+					<tr>
+						<th>Who</th>
+						<th>Amount</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each transactionsToPayBank as transaction}
+						<tr>
+							<td>
+								{users.find(p => p.id === transaction.request_payer_id)?.name}
+							</td>
+							<td>{transaction.amount}</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	{/if}
 </div>
 
 <hr>
