@@ -214,8 +214,8 @@
 			{#each transactionsToPay as transaction}
 				<tr>
 					<td>
-						{#if transaction.request_payer_id}
-							{playerList.getPlayer(transaction.request_payer_id)?.name}
+						{#if transaction.request_sender_id}
+							{users.find(p => p.id === transaction.request_sender_id)?.name}
 						{:else}
 							<u>Bank</u>
 						{/if}
