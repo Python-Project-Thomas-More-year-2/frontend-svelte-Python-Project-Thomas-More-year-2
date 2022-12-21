@@ -48,6 +48,21 @@
 					$SocketStore = await connectToSocket($UserStore?.socketConnection);
 				playerList.subscribeToSocket($SocketStore);
 				
+				$SocketStore.on('user-connect', () => {
+					console.log('user-connect');
+					fetchTransactions();
+				});
+				
+				$SocketStore.on('user-disconnect', () => {
+					console.log('user-disconnect');
+					fetchTransactions();
+				});
+				
+				$SocketStore.on('user-balance-update', () => {
+					console.log('user-balance-update');
+					fetchTransactions();
+				});
+				
 				$SocketStore.on('transaction-requested-rent', () => {
 					console.log('transaction-requested-rent');
 					fetchTransactions();
@@ -61,6 +76,15 @@
 				$SocketStore.on('user-balance-update', () => {
 					console.log('user-balance-update');
 					fetchTransactions();
+					playerList.fetch();
+				});
+				
+				$SocketStore.on('kick', () => {
+					console.log('kick');
+					
+					Session.fetchSession()
+						.then((s: Session) => $SessionStore = s)
+						.catch(() => goto('/'));
 				});
 			} catch {
 				await goto('/');
