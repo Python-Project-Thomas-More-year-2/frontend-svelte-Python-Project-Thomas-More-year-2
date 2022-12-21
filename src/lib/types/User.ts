@@ -47,6 +47,13 @@ export class User {
 			transaction: { amount }
 		});
 	}
+
+	public async requestMoneyFromBank(amount: number): Promise<void> {
+		await api.post<never, AxiosResponse<Record<string, never>>, { user: { id: number }, transaction: { amount: number } }>('/session/game/property-purchase', {
+			user: { id: this.id },
+			transaction: { amount }
+		});
+	}
 }
 
 export interface IUser {
