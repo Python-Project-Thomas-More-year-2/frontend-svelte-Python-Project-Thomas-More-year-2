@@ -40,6 +40,13 @@ export class User {
 			transaction: { amount }
 		});
 	}
+
+	public async requestMoneyFrom(userToRequestFrom: User, amount: number): Promise<void> {
+		await api.post<never, AxiosResponse<Record<string, never>>, { user: { id: number }, transaction: { amount: number } }>('/session/game/pay-rent', {
+			user: { id: userToRequestFrom.id },
+			transaction: { amount }
+		});
+	}
 }
 
 export interface IUser {

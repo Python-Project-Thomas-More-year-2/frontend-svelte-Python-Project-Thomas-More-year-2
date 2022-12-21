@@ -8,12 +8,16 @@
 	import { connectToSocket } from '$lib/socket/socket-client';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import Alert from '$lib/components/Alert.svelte';
+	import type { ITransaction } from '../../../axios/helpers/transactions';
+	import { getTransactionsToPay, payForTransaction } from '../../../axios/helpers/transactions';
 	
 	let users: UserList = [];
 	let playerList: PlayerList = new PlayerList().subscribe(players => users = players);
 	
 	let sessionGetPromise: Promise<Session>;
 	let userGetPromise: Promise<User>;
+	
+	let transactionsToPay: ITransaction[] = [];
 	
 	
 	onMount(async () => {
@@ -38,11 +42,22 @@
 				if (!$SocketStore?.connected)
 					$SocketStore = await connectToSocket($UserStore?.socketConnection);
 				playerList.subscribeToSocket($SocketStore);
+				
+				$SocketStore.on('transaction-requested-rent', () => {
+					console.log('transaction-requested-rent');
+					getTransactionsToPay().then(t => transactionsToPay = t);
+				});
+				
+				$SocketStore.on('user-balance-update', () => {
+					console.log('user-balance-update');
+					getTransactionsToPay().then(t => transactionsToPay = t);
+				});
 			} catch {
 				await goto('/');
 			}
 			
 			playerList.fetch();
+			getTransactionsToPay().then(t => transactionsToPay = t);
 		}
 	);
 	
@@ -68,18 +83,39 @@
 		}
 	};
 	
-	
-	let value = 0;
-	let selectedPlayerId: number;
-	const addMoneyToSelectedUser = async () => {
-		if (!selectedPlayerId && selectedPlayerId !== 0) return;
+	let valueRequestPersonal = 0;
+	let selectedPlayerIdRequestPersonal: number;
+	const requestPersonal = async () => {
+		if (!selectedPlayerIdRequestPersonal && selectedPlayerIdRequestPersonal !== 0) return;
 		try {
-			await users.find(p => p.id == selectedPlayerId)?.sendMoney(value);
+			await $UserStore?.requestMoneyFrom(users.find(p => p.id == selectedPlayerIdRequestPersonal), valueRequestPersonal);
+		} catch (e) {
+			console.error('requestPersonal', e);
+			error(e?.response?.data?.error || e?.response?.data?.message || 'Something went wrong');
+		}
+	};
+	
+	let valueBankMoneySend = 0;
+	let selectedPlayerIdBankMoneySend: number;
+	const addMoneyToSelectedUser = async () => {
+		if (!selectedPlayerIdBankMoneySend && selectedPlayerIdBankMoneySend !== 0) return;
+		try {
+			await users.find(p => p.id == selectedPlayerIdBankMoneySend)?.sendMoney(valueBankMoneySend);
 		} catch (e) {
 			console.error('addMoneyToSelectedUser', e);
 			error(e?.response?.data?.error || e?.response?.data?.message || 'Something went wrong');
 		}
 	};
+	
+	const payForTransactionFunction = (transaction: ITransaction) => (async () => {
+		try {
+			await payForTransaction(transaction);
+			getTransactionsToPay().then(t => transactionsToPay = t);
+		} catch (e) {
+			console.error('Pay for transaction', e);
+			error(e?.response?.data?.error || e?.response?.data?.message || 'Something went wrong');
+		}
+	});
 </script>
 
 <div>
@@ -166,22 +202,74 @@
 </Alert>
 
 <div>
+	<table class='table'>
+		<thead>
+			<tr>
+				<th>To</th>
+				<th>Amount</th>
+				<th>Pay</th>
+			</tr>
+		</thead>
+		<tbody>
+			{#each transactionsToPay as transaction}
+				<tr>
+					<td>
+						{#if transaction.request_payer_id}
+							{playerList.getPlayer(transaction.request_payer_id)?.name}
+						{:else}
+							<u>Bank</u>
+						{/if}
+					</td>
+					<td>{transaction.amount}</td>
+					<td>
+						<button
+							type='button'
+							class='btn btn-primary'
+							on:click={payForTransactionFunction(transaction)}>
+							Pay
+						</button>
+					</td>
+				</tr>
+			{/each}
+		</tbody>
+	</table>
+</div>
+
+<div>
+	<form on:submit|preventDefault={requestPersonal}>
+		<span>Request money</span>
+		<div class='input-group'>
+			<select bind:value={selectedPlayerIdRequestPersonal} class='form-select'>
+				{#each users as player}
+					{#if player.id !== $UserStore.id}
+						<option value={player.id}>{player.name}</option>
+					{/if}
+				{/each}
+			</select>
+			<span class='input-group-text'>$</span>
+			<input bind:value={valueRequestPersonal} class='form-control' min='0' type='number'>
+			<button class='form-control' type='submit'>Send</button>
+		</div>
+	</form>
+	
 	{#if $UserStore?.isHost}
+		<hr>
+		<h2>Bank</h2>
 		<form on:submit|preventDefault={addMoneyToSelectedUser}>
 			<span>Send Bank money to user</span>
 			<div class='input-group'>
-				<select bind:value={selectedPlayerId} class='form-select'>
+				<select bind:value={selectedPlayerIdBankMoneySend} class='form-select'>
 					{#each users as player}
 						<option value={player.id}>{player.name}</option>
 					{/each}
 				</select>
 				<span class='input-group-text'>$</span>
-				<input bind:value={value} class='form-control' min='0' type='number'>
+				<input bind:value={valueBankMoneySend} class='form-control' min='0' type='number'>
 				<button class='form-control' type='submit'>Send</button>
 			</div>
 		</form>
-		<hr>
 	{/if}
+	<hr>
 	<div>
 		<button class='btn btn-danger w-100' on:click={async () => {
 							if(!$SessionStore || !confirm('Are you sure, you want to leave this session?')) return;
